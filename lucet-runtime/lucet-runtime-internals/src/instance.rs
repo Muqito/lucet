@@ -587,7 +587,7 @@ impl Instance {
 
         self.resumed_val = Some(Box::new(val) as Box<dyn Any + 'static>);
 
-        self.set_instruction_bound_delta(max_insn_count.unwrap_or(0));
+        self.set_instruction_bound_delta(max_insn_count);
         self.swap_and_return(async_context)
     }
 
@@ -611,7 +611,7 @@ impl Instance {
                 "can only call resume_bounded() on an instance that hit an instruction bound",
             ));
         }
-        self.set_instruction_bound_delta(max_insn_count);
+        self.set_instruction_bound_delta(Some(max_insn_count));
         self.swap_and_return(true)
     }
 
@@ -958,11 +958,12 @@ impl Instance {
     /// value is *crossed*, but not if execution *begins* with the value exceeded. Hence `delta`
     /// must be greater than zero for this to set up the instance state to trigger a yield.
     #[inline]
-    pub fn set_instruction_bound_delta(&mut self, delta: u64) {
+    pub fn set_instruction_bound_delta(&mut self, delta: Option<u64>) {
         let implicits = self.get_instance_implicits_mut();
         let sum = implicits.instruction_count_adj + implicits.instruction_count_bound;
+        let delta = delta.unwrap_or(i64::MAX as u64);
         let delta = i64::try_from(delta).expect("delta too large");
-        implicits.instruction_count_bound = sum + delta;
+        implicits.instruction_count_bound = sum.wrapping_add(delta);
         implicits.instruction_count_adj = -delta;
     }
 
@@ -1140,7 +1141,7 @@ impl Instance {
         let mut args_with_vmctx = vec![Val::from(self.alloc.slot().heap)];
         args_with_vmctx.extend_from_slice(args);
 
-        self.set_instruction_bound_delta(inst_count_bound.unwrap_or(0));
+        self.set_instruction_bound_delta(inst_count_bound);
 
         let self_ptr = self as *mut _;
         Context::init_with_callback(

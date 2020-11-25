@@ -227,7 +227,7 @@ impl<'a> ModuleEnvironment<'a> for ModuleValidation<'a> {
         &mut self,
         sig_index: TypeIndex,
         module: &'a str,
-        field: &'a str,
+        field: Option<&'a str>,
     ) -> WasmResult<()> {
         debug_assert_eq!(
             self.info.functions.len(),
@@ -235,6 +235,7 @@ impl<'a> ModuleEnvironment<'a> for ModuleValidation<'a> {
             "import functions are declared first"
         );
 
+        let field = field.unwrap_or("");
         let unique_fn_index = self
             .info
             .imported_funcs
@@ -260,7 +261,7 @@ impl<'a> ModuleEnvironment<'a> for ModuleValidation<'a> {
         &mut self,
         global: Global,
         module: &'a str,
-        field: &'a str,
+        field: Option<&'a str>,
     ) -> WasmResult<()> {
         debug_assert_eq!(
             self.info.globals.len(),
@@ -268,7 +269,9 @@ impl<'a> ModuleEnvironment<'a> for ModuleValidation<'a> {
             "import globals are declared first"
         );
         self.info.globals.push(Exportable::new(global));
-        self.info.imported_globals.push((module, field));
+        self.info
+            .imported_globals
+            .push((module, field.unwrap_or("")));
         Ok(())
     }
 
@@ -276,7 +279,7 @@ impl<'a> ModuleEnvironment<'a> for ModuleValidation<'a> {
         &mut self,
         table: Table,
         module: &'a str,
-        field: &'a str,
+        field: Option<&'a str>,
     ) -> WasmResult<()> {
         debug_assert_eq!(
             self.info.tables.len(),
@@ -284,7 +287,9 @@ impl<'a> ModuleEnvironment<'a> for ModuleValidation<'a> {
             "import tables are declared first"
         );
         self.info.tables.push(Exportable::new(table));
-        self.info.imported_tables.push((module, field));
+        self.info
+            .imported_tables
+            .push((module, field.unwrap_or("")));
         Ok(())
     }
 
@@ -292,7 +297,7 @@ impl<'a> ModuleEnvironment<'a> for ModuleValidation<'a> {
         &mut self,
         memory: Memory,
         module: &'a str,
-        field: &'a str,
+        field: Option<&'a str>,
     ) -> WasmResult<()> {
         debug_assert_eq!(
             self.info.memories.len(),
@@ -303,7 +308,9 @@ impl<'a> ModuleEnvironment<'a> for ModuleValidation<'a> {
             .data_initializers
             .insert(MemoryIndex::new(self.info.memories.len()), vec![]);
         self.info.memories.push(Exportable::new(memory));
-        self.info.imported_memories.push((module, field));
+        self.info
+            .imported_memories
+            .push((module, field.unwrap_or("")));
         Ok(())
     }
 
